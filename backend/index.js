@@ -33,10 +33,20 @@ pool
 
 // Retrieve the character list from the API
 app.get("/api/characters", async (req, res) => {
+  const page = req.query.page || 1;
+  const name = req.query.name || "";
+
   try {
-    const response = await fetch("https://rickandmortyapi.com/api/character");
+    const response = await fetch(
+      `https://rickandmortyapi.com/api/character/?page=${page}&name=${name}`,
+    );
     const data = await response.json();
-    res.json(data.results);
+
+    if (data.error) {
+      return res.json({ info: { pages: 0 }, results: [] });
+    }
+
+    res.json(data);
   } catch (error) {
     res
       .status(500)
