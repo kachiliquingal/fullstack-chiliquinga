@@ -5,6 +5,7 @@ export default function CharacterCard({
   actionLabel,
   onAction,
   actionColor,
+  disabled,
 }) {
   return (
     <div
@@ -15,6 +16,7 @@ export default function CharacterCard({
         textAlign: "center",
         background: "#fff",
         boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+        opacity: disabled ? 0.7 : 1,
       }}
     >
       <img
@@ -29,15 +31,16 @@ export default function CharacterCard({
         {character.species}
       </p>
       <button
-        onClick={() => onAction(character)}
+        onClick={() => !disabled && onAction(character)}
+        disabled={disabled}
         style={{
           width: "100%",
           padding: "8px",
-          background: actionColor || "#007bff",
+          background: disabled ? "#9fb3c8" : actionColor || "#007bff",
           color: "white",
           border: "none",
           borderRadius: "4px",
-          cursor: "pointer",
+          cursor: disabled ? "not-allowed" : "pointer",
           fontWeight: "bold",
         }}
       >

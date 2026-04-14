@@ -8,12 +8,18 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
-  // Pagination and search states
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Function that accepts page and search
+  // Load saved characters as soon as you open the app
+  useEffect(() => {
+    fetch("/api/saved")
+      .then((res) => res.json())
+      .then((data) => setSavedCharacters(data))
+      .catch((err) => console.error(err));
+  }, []);
+
   const fetchAPICharacters = (currentPage, search) => {
     setLoading(true);
     fetch(`/api/characters?page=${currentPage}&name=${search}`)
@@ -35,7 +41,6 @@ function App() {
     }
   }, [page, view]);
 
-  // Search form handler
   const handleSearch = (e) => {
     e.preventDefault();
     setPage(1);
@@ -63,15 +68,19 @@ function App() {
         species: char.species,
         image: char.image,
       }),
-    }).then(() => {
-      setMessage(`¡${char.name} guardado!`);
-      setTimeout(() => setMessage(""), 2000);
-    });
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        // Add the character to the local state to instantly lock the button
+        setSavedCharacters((prev) => [data.character, ...prev]);
+        setMessage(`¡${char.name} guardado!`);
+        setTimeout(() => setMessage(""), 2000);
+      });
   };
 
   const deleteCharacter = (char) => {
     fetch(`/api/saved/${char.id}`, { method: "DELETE" }).then(() => {
-      setSavedCharacters(savedCharacters.filter((c) => c.id !== char.id));
+      setSavedCharacters((prev) => prev.filter((c) => c.id !== char.id));
       setMessage("Eliminado de la base de datos");
       setTimeout(() => setMessage(""), 2000);
     });
@@ -134,7 +143,6 @@ function App() {
           </div>
         )}
 
-        {/* Search: Only visible in explore mode */}
         {view === "explore" && (
           <form
             onSubmit={handleSearch}
@@ -185,17 +193,24 @@ function App() {
               gap: "20px",
             }}
           >
-            {/* Use modular component */}
             {view === "explore" &&
-              characters.map((char) => (
-                <CharacterCard
-                  key={char.id}
-                  character={char}
-                  actionLabel="Guardar en BD"
-                  actionColor="#27ab83"
-                  onAction={saveCharacter}
-                />
-              ))}
+              characters.map((char) => {
+                // Check if the current character's API_ID already exists in the database
+                const isSaved = savedCharacters.some(
+                  (savedChar) => savedChar.api_id === char.id,
+                );
+
+                return (
+                  <CharacterCard
+                    key={char.id}
+                    character={char}
+                    actionLabel={isSaved ? "Guardado en BD" : "Guardar"}
+                    actionColor="#27ab83"
+                    onAction={saveCharacter}
+                    disabled={isSaved}
+                  />
+                );
+              })}
 
             {view === "saved" &&
               savedCharacters.map((char) => (
@@ -209,7 +224,6 @@ function App() {
               ))}
           </div>
 
-          {/* Empty messages */}
           {view === "explore" && characters.length === 0 && (
             <p style={{ textAlign: "center", marginTop: "30px" }}>
               No se encontraron personajes con ese nombre.
@@ -221,7 +235,6 @@ function App() {
             </p>
           )}
 
-          {/* Controles de Paginación */}
           {view === "explore" && totalPages > 1 && (
             <div
               style={{
