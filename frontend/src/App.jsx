@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import CharacterCard from "./components/CharacterCard";
 
 function App() {
   const [characters, setCharacters] = useState([]);
@@ -7,18 +8,40 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
-  // Bring the complete list of the Backend API
-  useEffect(() => {
+  // Pagination and search states
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Function that accepts page and search
+  const fetchAPICharacters = (currentPage, search) => {
     setLoading(true);
-    fetch("/api/characters")
+    fetch(`/api/characters?page=${currentPage}&name=${search}`)
       .then((res) => res.json())
       .then((data) => {
-        setCharacters(data);
+        setCharacters(data.results || []);
+        setTotalPages(data.info ? data.info.pages : 0);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error(err);
         setLoading(false);
       });
-  }, []);
+  };
 
-  // Retrieve saved characters in PostgreSQL
+  useEffect(() => {
+    if (view === "explore") {
+      fetchAPICharacters(page, searchTerm);
+    }
+  }, [page, view]);
+
+  // Search form handler
+  const handleSearch = (e) => {
+    e.preventDefault();
+    setPage(1);
+    fetchAPICharacters(1, searchTerm);
+  };
+
   const loadSavedCharacters = () => {
     setLoading(true);
     fetch("/api/saved")
@@ -46,9 +69,9 @@ function App() {
     });
   };
 
-  const deleteCharacter = (id) => {
-    fetch(`/api/saved/${id}`, { method: "DELETE" }).then(() => {
-      setSavedCharacters(savedCharacters.filter((c) => c.id !== id));
+  const deleteCharacter = (char) => {
+    fetch(`/api/saved/${char.id}`, { method: "DELETE" }).then(() => {
+      setSavedCharacters(savedCharacters.filter((c) => c.id !== char.id));
       setMessage("Eliminado de la base de datos");
       setTimeout(() => setMessage(""), 2000);
     });
@@ -64,9 +87,8 @@ function App() {
       }}
     >
       <header style={{ textAlign: "center", marginBottom: "30px" }}>
-        <h1>Rick and Morty Fullstack</h1>
+        <h1 style={{ color: "#102a43" }}>Directorio Rick and Morty</h1>
 
-        {/* Simple navigation */}
         <nav style={{ marginBottom: "20px" }}>
           <button
             onClick={() => setView("explore")}
@@ -93,7 +115,7 @@ function App() {
               borderRadius: "4px",
             }}
           >
-            Ver Personajes Guardados
+            Ver Base de Datos
           </button>
         </nav>
 
@@ -105,101 +127,143 @@ function App() {
               color: "white",
               borderRadius: "4px",
               display: "inline-block",
+              marginBottom: "15px",
             }}
           >
             {message}
           </div>
         )}
+
+        {/* Search: Only visible in explore mode */}
+        {view === "explore" && (
+          <form
+            onSubmit={handleSearch}
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              gap: "10px",
+              marginBottom: "20px",
+            }}
+          >
+            <input
+              type="text"
+              placeholder="Buscar personaje (Ej. Rick)"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{
+                padding: "10px",
+                width: "250px",
+                borderRadius: "4px",
+                border: "1px solid #ccc",
+              }}
+            />
+            <button
+              type="submit"
+              style={{
+                padding: "10px 20px",
+                background: "#007bff",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+              }}
+            >
+              Buscar
+            </button>
+          </form>
+        )}
       </header>
 
       {loading ? (
-        <p style={{ textAlign: "center" }}>Procesando...</p>
+        <p style={{ textAlign: "center" }}>Cargando datos...</p>
       ) : (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
-            gap: "20px",
-          }}
-        >
-          {/* Exploration View */}
-          {view === "explore" &&
-            characters.map((char) => (
-              <div
-                key={char.id}
-                style={{
-                  border: "1px solid #d9e2ec",
-                  borderRadius: "8px",
-                  padding: "15px",
-                  textAlign: "center",
-                  background: "#fff",
-                }}
-              >
-                <img
-                  src={char.image}
-                  alt={char.name}
-                  style={{ width: "100%", borderRadius: "8px" }}
+        <>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))",
+              gap: "20px",
+            }}
+          >
+            {/* Use modular component */}
+            {view === "explore" &&
+              characters.map((char) => (
+                <CharacterCard
+                  key={char.id}
+                  character={char}
+                  actionLabel="Guardar en BD"
+                  actionColor="#27ab83"
+                  onAction={saveCharacter}
                 />
-                <h4>{char.name}</h4>
-                <button
-                  onClick={() => saveCharacter(char)}
-                  style={{
-                    width: "100%",
-                    padding: "8px",
-                    background: "#27ab83",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "4px",
-                    cursor: "pointer",
-                  }}
-                >
-                  Guardar
-                </button>
-              </div>
-            ))}
+              ))}
 
-          {/* Database View (CRUD) */}
-          {view === "saved" &&
-            savedCharacters.map((char) => (
-              <div
-                key={char.id}
-                style={{
-                  border: "1px solid #d9e2ec",
-                  borderRadius: "8px",
-                  padding: "15px",
-                  textAlign: "center",
-                  background: "#f0f4f8",
-                }}
-              >
-                <img
-                  src={char.image}
-                  alt={char.name}
-                  style={{ width: "100%", borderRadius: "8px" }}
+            {view === "saved" &&
+              savedCharacters.map((char) => (
+                <CharacterCard
+                  key={char.id}
+                  character={char}
+                  actionLabel="Eliminar de BD"
+                  actionColor="#e12d39"
+                  onAction={deleteCharacter}
                 />
-                <h4>{char.name}</h4>
-                <button
-                  onClick={() => deleteCharacter(char.id)}
-                  style={{
-                    width: "100%",
-                    padding: "8px",
-                    background: "#e12d39",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "4px",
-                    cursor: "pointer",
-                  }}
-                >
-                  Eliminar de BD
-                </button>
-              </div>
-            ))}
+              ))}
+          </div>
 
+          {/* Empty messages */}
+          {view === "explore" && characters.length === 0 && (
+            <p style={{ textAlign: "center", marginTop: "30px" }}>
+              No se encontraron personajes con ese nombre.
+            </p>
+          )}
           {view === "saved" && savedCharacters.length === 0 && (
-            <p style={{ gridColumn: "1/-1", textAlign: "center" }}>
+            <p style={{ textAlign: "center", marginTop: "30px" }}>
               No tienes personajes guardados aún.
             </p>
           )}
-        </div>
+
+          {/* Controles de Paginación */}
+          {view === "explore" && totalPages > 1 && (
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                marginTop: "40px",
+                gap: "15px",
+              }}
+            >
+              <button
+                onClick={() => setPage(page - 1)}
+                disabled={page === 1}
+                style={{
+                  padding: "10px 20px",
+                  cursor: page === 1 ? "not-allowed" : "pointer",
+                  background: "#d9e2ec",
+                  border: "none",
+                  borderRadius: "4px",
+                }}
+              >
+                ← Anterior
+              </button>
+              <span style={{ fontWeight: "bold", color: "#102a43" }}>
+                Página {page} de {totalPages}
+              </span>
+              <button
+                onClick={() => setPage(page + 1)}
+                disabled={page === totalPages}
+                style={{
+                  padding: "10px 20px",
+                  cursor: page === totalPages ? "not-allowed" : "pointer",
+                  background: "#d9e2ec",
+                  border: "none",
+                  borderRadius: "4px",
+                }}
+              >
+                Siguiente →
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
