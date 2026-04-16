@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import CharacterCard from "./components/CharacterCard";
+import CharacterCard from "./components/CharacterCard"; 
 
 function App() {
   const [characters, setCharacters] = useState([]);
