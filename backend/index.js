@@ -7,7 +7,7 @@ app.use(cors());
 app.use(express.json());
 
 // Connecting to PostgreSQL
-const pool = new Pool({
+const pool = new Pool({ 
   user: "postgres",
   host: "db",
   database: "appdb",
