@@ -14,7 +14,7 @@ services:
       - "5432:5432"
 
   backend:
-    build: ./backend
+    build: kachiliquingal/fullstack-backend:dev
     restart: always
     depends_on:
       - db
@@ -22,7 +22,7 @@ services:
       - "3000:3000"
 
   frontend:
-    build: ./frontend
+    build: kachiliquingal/fullstack-frontend:dev
     restart: always
     depends_on:
       - backend
