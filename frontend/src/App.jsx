@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import CharacterCard from "./components/CharacterCard"; 
+import CharacterCard from "./components/CharacterCard";
 
 function App() {
   const [characters, setCharacters] = useState([]);
@@ -96,7 +96,7 @@ function App() {
       }}
     >
       <header style={{ textAlign: "center", marginBottom: "30px" }}>
-        <h1 style={{ color: "#102a43" }}>Directorio Rick and Morty</h1>
+        <h1 style={{ color: "#d32f2f" }}>Directorio Rick and Morty</h1>
 
         <nav style={{ marginBottom: "20px" }}>
           <button
