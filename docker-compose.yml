@@ -14,7 +14,7 @@ services:
       - "5432:5432"
 
   backend:
-    image: kachiliquingal/fullstack-backend:dev
+    image: kachiliquingal/fullstack-backend:${BACKEND_TAG:-latest}
     restart: always
     depends_on:
       - db
@@ -22,7 +22,7 @@ services:
       - "3000:3000"
 
   frontend:
-    image: kachiliquingal/fullstack-frontend:dev
+    image: kachiliquingal/fullstack-frontend:${FRONTEND_TAG:-latest}
     restart: always
     depends_on:
       - backend
